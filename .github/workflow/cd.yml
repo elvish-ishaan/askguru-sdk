@@ -1,0 +1,33 @@
+name: Publish NPM Package
+
+on:
+  push:
+    branches:
+      - main # Trigger on pushes to the main branch
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Or your desired Node.js version
+          registry-url: 'https://registry.npmjs.org' # For publishing to npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package (if necessary)
+        run: npm run build # If your package requires a build step
+
+      - name: Authenticate with npm
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+
+      - name: Publish to npm
+        run: npm publish --access public # Or --access restricted for private packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
