@@ -10,12 +10,6 @@ Install via npm:
 npm install askguru
 ```
 
-Or with yarn:
-
-```bash
-yarn add askguru
-```
-
 ## Usage
 
 Import the `ChatWidget` component in your React app:
@@ -26,7 +20,7 @@ import ChatWidget from 'askguru';
 
 Add the widget to your component tree:
 
-[Api key can be generated here](https://askguru.dryink.space/)
+[Api key can be generated here : ](https://askguru.dryink.space/)
 
 ```tsx
 <ChatWidget
