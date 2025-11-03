@@ -1,6 +1,10 @@
 {
   "name": "askguru",
+<<<<<<< HEAD
   "version": "0.0.8",
+=======
+  "version": "0.0.6",
+>>>>>>> 47012565c193c8c5bbede67d36108ca8f4addcf5
   "description": "ask guru react sdk",
   "license": "ISC",
   "author": "",

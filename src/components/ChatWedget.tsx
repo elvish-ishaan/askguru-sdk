@@ -41,9 +41,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
     scrollToBottom();
   }, [messages]);
 
+<<<<<<< HEAD
   const handleInputClick = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+=======
+  const handleInputClick = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+>>>>>>> 47012565c193c8c5bbede67d36108ca8f4addcf5
     setInputValue(e.target.value);
     // Clear error when user starts typing
     if (error) setError(null);
@@ -52,7 +56,12 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
   const handleSendMessage = async (
     e:
       | React.MouseEvent<HTMLButtonElement>
+<<<<<<< HEAD
       | React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+=======
+      | React.KeyboardEvent<HTMLInputElement>
+      | React.KeyboardEvent<HTMLTextAreaElement>
+>>>>>>> 47012565c193c8c5bbede67d36108ca8f4addcf5
   ) => {
     e.preventDefault();
     if (inputValue.trim() === "" || loading) return;
@@ -139,7 +148,11 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
   };
 
   const handleKeyPress = (
+<<<<<<< HEAD
     e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+=======
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+>>>>>>> 47012565c193c8c5bbede67d36108ca8f4addcf5
   ): void => {
     if (e.key === "Enter") {
       handleSendMessage(e);
