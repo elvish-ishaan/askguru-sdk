@@ -7,7 +7,7 @@ import './chatWidget.css';
 interface Message {
   text: string;
   source?: string;
-  sender: 'user' | 'ai';
+  sender: "user" | "ai";
   id: string;
 }
 
@@ -36,7 +36,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const scrollToBottom = (): void => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -60,8 +60,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
     const userMessageText = inputValue.trim();
     const userMessage: Message = {
       text: userMessageText,
-      sender: 'user',
-      id: Date.now().toString()
+      sender: "user",
+      id: Date.now().toString(),
     };
 
     setMessages(prevMessages => [...prevMessages, userMessage]);
@@ -70,12 +70,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
     setError(null);
 
     try {
-      const apiEndpoint = isInitPrompt 
+      const apiEndpoint = isInitPrompt
         ? config.apiEndpoint || "http://localhost:3000/api/chat"
-        : config.apiEndpoint?.replace('/chat', '/chat/follow-up') || "http://localhost:3000/api/chat/follow-up";
+        : config.apiEndpoint?.replace("/chat", "/chat/follow-up") ||
+          "http://localhost:3000/api/chat/follow-up";
 
       const requestBody: { query: string; threadId?: string | null } = {
-        query: userMessageText
+        query: userMessageText,
       };
 
       if (!isInitPrompt && threadId) {
@@ -85,10 +86,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
       const res = await fetch(apiEndpoint, {
         method: "POST",
         headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${config.apiKey}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {
@@ -98,7 +99,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
       const data = await res.json();
 
       if (!data.success) {
-        throw new Error(data.message || 'Failed to get response from AI');
+        throw new Error(data.message || "Failed to get response from AI");
       }
 
       if (isInitPrompt && data?.threadId) {
@@ -107,25 +108,27 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
       }
 
       const aiMessage: Message = {
-        sender: 'ai',
-        text: data.answer?.text || 'Sorry, I could not generate a response.',
+        sender: "ai",
+        text: data.answer?.text || "Sorry, I could not generate a response.",
         source: data.answer?.source,
-        id: (Date.now() + 1).toString()
+        id: (Date.now() + 1).toString(),
       };
 
-      setMessages(prevMessages => [...prevMessages, aiMessage]);
-
+      setMessages((prevMessages) => [...prevMessages, aiMessage]);
     } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      console.error("Chat error:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred. Please try again.";
       setError(errorMessage);
       
       const errorMsg: Message = {
-        sender: 'ai',
+        sender: "ai",
         text: `Error: ${errorMessage}`,
-        id: (Date.now() + 1).toString()
+        id: (Date.now() + 1).toString(),
       };
-      setMessages(prevMessages => [...prevMessages, errorMsg]);
+      setMessages((prevMessages) => [...prevMessages, errorMsg]);
     } finally {
       setLoading(false);
     }
