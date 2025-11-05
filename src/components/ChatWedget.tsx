@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './chatWidget.css';
 
 interface Message {
@@ -23,10 +26,9 @@ interface ChatWidgetProps {
 
 const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { text: 'Hello! How can I help you today?', sender: 'ai', id: '0' }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -41,15 +43,19 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
     scrollToBottom();
   }, [messages]);
 
-  const handleInputClick = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
-    // Clear error when user starts typing
     if (error) setError(null);
   };
 
   const handleSendMessage = async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     if (inputValue.trim() === '' || loading) return;
+
+    // Hide onboarding after first message
+    if (showOnboarding) {
+      setShowOnboarding(false);
+    }
 
     const userMessageText = inputValue.trim();
     const userMessage: Message = {
@@ -58,7 +64,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
       id: Date.now().toString()
     };
 
-    // Add user message immediately to UI and clear input
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setInputValue('');
     setLoading(true);
@@ -96,13 +101,11 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
         throw new Error(data.message || 'Failed to get response from AI');
       }
 
-      // Set thread ID on first message
       if (isInitPrompt && data?.threadId) {
         setThreadId(data.threadId);
         setInitPrompt(false);
       }
 
-      // Add AI response to messages
       const aiMessage: Message = {
         sender: 'ai',
         text: data.answer?.text || 'Sorry, I could not generate a response.',
@@ -117,7 +120,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       setError(errorMessage);
       
-      // Add error message to chat
       const errorMsg: Message = {
         sender: 'ai',
         text: `Error: ${errorMessage}`,
@@ -135,6 +137,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
     }
   };
 
+  const userName = "Anwar"; // You can make this configurable
+
   return (
     <>
       {/* Chat Widget Button */}
@@ -143,11 +147,11 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
         onClick={() => setIsOpen(true)}
         aria-label="Open chat"
       >
-        {
-            config.logoImage ? <img className='icon-image' src={config.logoImage}/> : 
-                               <span className="chat-widget-text">AG</span>
-
-        }
+        {config.logoImage ? (
+          <img className='widget-logo' src={config.logoImage} alt="Chat" />
+        ) : (
+          <span className="chat-widget-text">AG</span>
+        )}
       </button>
 
       {/* Chat Modal */}
@@ -155,18 +159,20 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
         <div className="chat-modal-overlay" onClick={() => setIsOpen(false)}>
           <div className="chat-modal" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div style={{
-                background: config.theme
-            }} className="chat-header">
+            <div 
+              style={{ background: config.theme || 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }} 
+              className="chat-header"
+            >
               <div className="chat-header-content">
                 <div className="chat-avatar">
-                  {
-                    config.logoImage ? <img className='icon-image' src={config.logoImage} alt="logo" /> :
+                  {config.logoImage ? (
+                    <img className='avatar-image' src={config.logoImage} alt="logo" />
+                  ) : (
                     <span className="chat-avatar-text">AG</span>
-                  }
+                  )}
                 </div>
                 <div>
-                  <h3 className="chat-title">{ config.botName ? `${config.botName}` : "AskGuru"}</h3>
+                  <h3 className="chat-title">{config.botName || "AskGuru"}</h3>
                 </div>
               </div>
               <button
@@ -174,66 +180,144 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ config }) => {
                 onClick={() => setIsOpen(false)}
                 aria-label="Close chat"
               >
-                Close
+                ✕
               </button>
             </div>
 
+            {/* Onboarding Screen */}
+            {showOnboarding && messages.length === 0 && (
+              <div className="onboarding-screen">
+                <div className="onboarding-content" style={{
+                  color: config.theme
+                }}>
+                  <div className="onboarding-avatar">
+                    {config.logoImage ? (
+                      <img src={config.logoImage} alt="Bot Avatar" className="onboarding-avatar-img" />
+                    ) : (
+                      <div className="onboarding-avatar-placeholder">
+                        <span>AG</span>
+                      </div>
+                    )}
+                  </div>
+                  <h2 className="onboarding-greeting" style={{
+                    color: config.theme
+                  }}>
+                    Hi there
+                  </h2>
+                  <p className="onboarding-subtext">
+                    What&apos;s on <span className="highlight-text">your mind?</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Messages Area */}
-            <div className="chat-messages">
-              {messages?.map((message) => (
-                <div
-                  key={message.id}
-                  className={`chat-message ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
-                >
-                  <div className="message-bubble">
-                    {message.text}
-                    {
-                      message.source && <div>
-                      <p style={{
-                        marginTop: "10px",
-                        fontWeight: "bold"
-                      }}>Sources:</p>
-                      <a style={{color: config.theme }} href={message?.source} target='_blank'>{message?.source}</a>
+            {!showOnboarding && (
+              <div className="chat-messages">
+                {messages?.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`chat-message ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
+                  >
+                    <div className="message-bubble">
+                      {message.sender === 'ai' ? (
+                        <ReactMarkdown
+                          components={{
+                            //@ts-expect-error fix inline type
+                            code({ inline, className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(className || '');
+                              return !inline && match ? (
+                                <SyntaxHighlighter
+                                //@ts-expect-error fix overload
+                                  style={vscDarkPlus}
+                                  language={match[1]}
+                                  PreTag="div"
+                                  {...props}
+                                >
+                                  {String(children).replace(/\n$/, '')}
+                                </SyntaxHighlighter>
+                              ) : (
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              );
+                            }
+                          }}
+                        >
+                          {message.text}
+                        </ReactMarkdown>
+                      ) : (
+                        message.text
+                      )}
+                      {message.source && (
+                        <div className="message-source">
+                          <p className="source-label">Sources:</p>
+                          <a 
+                            style={{ color: config.theme || '#4F46E5' }} 
+                            href={message.source} 
+                            target='_blank' 
+                            rel="noopener noreferrer"
+                          >
+                            {message.source}
+                          </a>
+                        </div>
+                      )}
                     </div>
-                    }
                   </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="chat-message ai-message">
-                  <div className="message-bubble">
-                    Generating...
+                ))}
+                {loading && (
+                  <div className="chat-message ai-message">
+                    <div className="message-bubble loading-bubble">
+                      <div className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
 
             {/* Input Area */}
             <div className="chat-input-container">
-              <input
-                type="text"
-                className="chat-input"
-                placeholder="Type your message..."
-                value={inputValue}
-                onChange={handleInputClick}
-                onKeyPress={handleKeyPress}
-                disabled={loading}
-              />
-              <button
-              style={{
-                background: config.theme
-              }}
-                onClick={handleSendMessage}
-                className="chat-send-button"
-                aria-label="Send message"
-                disabled={loading}
-              >
-                Send
-              </button>
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  className="chat-input"
+                  placeholder="Ask me anything..."
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  disabled={loading}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  className="chat-send-button"
+                  style={{ 
+                    background: config.theme || 'linear-gradient(135deg, #2563eb 0%, #60a5fa 100%)' 
+                  }}
+                  aria-label="Send message"
+                  disabled={loading || !inputValue.trim()}
+                >
+                  <svg 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2"
+                  >
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <span className='watermark'>Powered by <span className='askguru-brand'>AskGuru</span></span>
-
+            
+            <span className='watermark'>
+              Powered by <span className='askguru-brand'>AskGuru</span>
+            </span>
           </div>
         </div>
       )}
